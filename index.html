@@ -112,11 +112,11 @@
                 connip_timezone2 = document.getElementById("connip_timezone2").innerHTML;
 
                 if (sys_timezone == "" || connip_timezone2 == "") { // Unfinished loading
-                    document.getElementById("suspicious_time").innerHTML = "PENDING";
+                    document.getElementById("suspicious_timezone2").innerHTML = "PENDING";
                 } else if (sys_timezone != connip_timezone2) {
-                    document.getElementById("suspicious_time").innerHTML = "Y";
+                    document.getElementById("suspicious_timezone2").innerHTML = "Y";
                 } else {
-                    document.getElementById("suspicious_time").innerHTML = "N";
+                    document.getElementById("suspicious_timezone2").innerHTML = "N";
                 }
 
                 // Time check
@@ -124,11 +124,11 @@
                 net_time = document.getElementById("net_time").innerHTML;
 
                 if (sys_time == "" || net_time == "") { // Unfinished loading
-                    document.getElementById("suspicious_timezone2").innerHTML = "PENDING";
+                    document.getElementById("suspicious_time").innerHTML = "PENDING";
                 } else if (parseInt(sys_time) > parseInt(net_time)+5000 || parseInt(net_time) > parseInt(sys_time)+5000) {
-                    document.getElementById("suspicious_timezone2").innerHTML = "Y";
+                    document.getElementById("suspicious_time").innerHTML = "Y";
                 } else {
-                    document.getElementById("suspicious_timezone2").innerHTML = "N";
+                    document.getElementById("suspicious_time").innerHTML = "N";
                 }
 
                 cntr++;
