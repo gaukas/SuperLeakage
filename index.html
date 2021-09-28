@@ -2,6 +2,8 @@
     <head>
         <title>SuperLeakage Demo</title>
         <script src="js/DetectRTC/DetectRTC.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/ip-geolocation-api-jquery-sdk@1.1.0/ipgeolocation.min.js"></script>
+        <script src="js/utils/all.js"></script>
         <script src="js/SuperLeakage.js"></script>
     </head>
     <body>
@@ -12,22 +14,48 @@
                   overflow:hidden;padding:10px 5px;word-break:normal;}
                 .tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
                   font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
-                .tg .tg-c6of{background-color:#ffffff;border-color:inherit;text-align:left;vertical-align:top}
                 .tg .tg-0pky{border-color:inherit;text-align:left;vertical-align:top}
                 </style>
                 <table class="tg">
                 <thead>
                   <tr>
-                    <th class="tg-c6of"><span style="font-weight:bold;color:#000">Name</span></th>
+                    <th class="tg-0pky"><span style="font-weight:bold">Leaked Data</span></th>
+                    <th class="tg-0pky"><span style="font-weight:bold">Leaked Value</span></th>
+                    <th class="tg-0pky"><span style="font-weight:bold">Connection Data</span></th>
                     <th class="tg-0pky"><span style="font-weight:bold">Value</span></th>
+                    <th class="tg-0pky"><span style="font-weight:bold">Suspicious?</span></th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td class="tg-0pky">IP Address</td>
-                    <td class="tg-0pky" id="ipaddr"></td>
+                    <td class="tg-0pky">WebRTC IP</td>
+                    <td class="tg-0pky" id="rtcip"></td>
+                    <td class="tg-0pky">Connection IP</td>
+                    <td class="tg-0pky" id="connip"></td>
+                    <td class="tg-0pky" id="suspicious_ip"></td> 
                   </tr>
                   <tr>
+                    <td class="tg-0pky">RTC IP Timezone</td>
+                    <td class="tg-0pky" id="rtcip_timezone"></td>
+                    <td class="tg-0pky">Connection IP Timezone</td>
+                    <td class="tg-0pky" id="connip_timezone"></td>
+                    <td class="tg-0pky" id="suspicious_timezone"></td> 
+                  </tr>
+                  <tr>
+                    <td class="tg-0pky">System Timezone</td>
+                    <td class="tg-0pky" id="sys_timezone"></td>
+                    <td class="tg-0pky">Connection IP Timezone</td>
+                    <td class="tg-0pky" id="connip_timezone2"></td>
+                    <td class="tg-0pky" id="suspicious_timezone2"></td> 
+                  </tr>
+                  <tr>
+                    <td class="tg-0pky">System Timestamp</td>
+                    <td class="tg-0pky" id="sys_time"></td>
+                    <td class="tg-0pky">Net Timestamp</td>
+                    <td class="tg-0pky" id="net_time"></td>
+                    <td class="tg-0pky" id="suspicious_time"></td> 
+                  </tr>
+                  <!-- <tr>
                     <td class="tg-0pky">Is Local IP</td>
                     <td class="tg-0pky" id="iplocal"></td>
                   </tr>
@@ -38,19 +66,115 @@
                   <tr>
                     <td class="tg-0pky">Is IPv4</td>
                     <td class="tg-0pky" id="ipv4"></td>
-                  </tr>
+                  </tr> -->
+                
                 </tbody>
             </table>
+            <div id="endofreport">
+
+            </div>
         </div>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+
         <script>
-            function GetIpInfo(retJson) {
-                console.log(retJson);
-                document.getElementById("ipaddr").innerHTML = retJson.ipAddr;
-                document.getElementById("iplocal").innerHTML = retJson.local;
-                document.getElementById("ippublic").innerHTML = retJson.public;
-                document.getElementById("ipv4").innerHTML = retJson.version4;
+            var cntr = 0;
+            const TARGET_CNTR = 2;
+            var rtcip = "";
+            var connip = "";
+
+            function reloadReport() {
+                // IP
+                rtcip = document.getElementById("rtcip").innerHTML;
+                connip = document.getElementById("connip").innerHTML;
+
+                if (rtcip == "" || connip == "") { // Unfinished loading
+                    document.getElementById("suspicious_ip").innerHTML = "PENDING";
+                } else if (rtcip != connip) {
+                    document.getElementById("suspicious_ip").innerHTML = "Y";
+                } else {
+                    document.getElementById("suspicious_ip").innerHTML = "N";
+                }
+
+                // Timezone 1
+                rtcip_timezone = document.getElementById("rtcip_timezone").innerHTML;
+                connip_timezone = document.getElementById("connip_timezone").innerHTML;
+
+                if (rtcip_timezone == "" || connip_timezone == "") { // Unfinished loading
+                    document.getElementById("suspicious_timezone").innerHTML = "PENDING";
+                } else if (rtcip_timezone != connip_timezone) {
+                    document.getElementById("suspicious_timezone").innerHTML = "Y";
+                } else {
+                    document.getElementById("suspicious_timezone").innerHTML = "N";
+                }
+            
+                // Timezone 2
+                sys_timezone = document.getElementById("sys_timezone").innerHTML;
+                connip_timezone2 = document.getElementById("connip_timezone2").innerHTML;
+
+                if (sys_timezone == "" || connip_timezone2 == "") { // Unfinished loading
+                    document.getElementById("suspicious_time").innerHTML = "PENDING";
+                } else if (sys_timezone != connip_timezone2) {
+                    document.getElementById("suspicious_time").innerHTML = "Y";
+                } else {
+                    document.getElementById("suspicious_time").innerHTML = "N";
+                }
+
+                // Time check
+                sys_time = document.getElementById("sys_time").innerHTML;
+                net_time = document.getElementById("net_time").innerHTML;
+
+                if (sys_time == "" || net_time == "") { // Unfinished loading
+                    document.getElementById("suspicious_timezone2").innerHTML = "PENDING";
+                } else if (parseInt(sys_time) > parseInt(net_time)+5000 || parseInt(net_time) > parseInt(sys_time)+5000) {
+                    document.getElementById("suspicious_timezone2").innerHTML = "Y";
+                } else {
+                    document.getElementById("suspicious_timezone2").innerHTML = "N";
+                }
+
+                cntr++;
+                if (cntr >= TARGET_CNTR) {
+                    document.getElementById("endofreport").innerHTML = "<br><hr>The leak report is now completed.";
+                }
             };
-            fetchRealIp(GetIpInfo);
+            // 1. Get connection-based info.
+            
+            // 1.1 IP Address
+            $.getJSON('https://api.ipify.org?format=jsonp&callback=?', function(data) {
+                document.getElementById("connip").innerHTML = data.ip;
+                reloadReport();
+            });
+            
+            // 1.2 Connection IP based Locale(time, timezone, timezone offset, languages)
+            _ipgeolocation.getGeolocation(function(ipgeo) {
+                document.getElementById("connip_timezone").innerHTML = ipgeo.time_zone.name;
+                document.getElementById("connip_timezone2").innerHTML = ipgeo.time_zone.name;
+                document.getElementById("net_time").innerHTML = ipgeo.time_zone.current_time_unix * 1000;
+                reloadReport();
+            }, "714fdc89eeed40a397b13c7cf01ffdcb");
+
+            // 2. Get leaked info not from connection
+
+            // 2.1 IP Address            
+            fetchRealIp(function(retJson) {
+                if (retJson.ipAddr == null) {
+                    document.getElementById("rtcip").innerHTML = "DISABLED";
+                } else {
+                    document.getElementById("rtcip").innerHTML = retJson.ipAddr;
+                }
+                reloadReport();
+            });
+            
+            // 2.2 Real IP Timezone (RealIP same as fetchRealIP())
+            fetchRealIpLocale(function(realIpLocale) {
+                document.getElementById("rtcip_timezone").innerHTML = realIpLocale.timeZone;
+                reloadReport();
+            });
+
+            fetchSystemLocale(function(systemLocale) {
+                document.getElementById("sys_timezone").innerHTML = systemLocale.timeZone;
+                document.getElementById("sys_time").innerHTML = systemLocale.datetime.getTime();
+                reloadReport();
+            });
         </script>
     </body>
 </html>
